@@ -1,0 +1,26 @@
+
+import matplotlib.pyplot as plt
+
+import pandas as pd
+
+ 
+
+df = pd.read_csv('your_dataset.csv')
+
+ 
+
+colors = df['PwnCount']  # Set the color of points based on PwnCount column
+
+plt.scatter(df['Reported_year'], df['Breach_year'], c=colors, alpha=0.5, cmap='viridis')
+
+plt.xlabel('Reported Year')
+
+plt.ylabel('Breach Year')
+
+plt.title('Scatter Plot of Reported vs Breach Year')
+
+plt.colorbar(label='PwnCount')  # Add colorbar and label it
+
+plt.show()
+
+
