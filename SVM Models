@@ -1,0 +1,493 @@
+SPLIT SVM 
+
+import pandas as pd 
+
+# Load the dataset 
+
+df = pd.read_csv('dbfinal.csv') 
+
+ 
+
+# Define the feature matrix X and target variable y 
+
+X = df[['PwnCount', 'ReportedDays', 'Reported_year', 'Breach_year', 'IsVerified_False', 'IsVerified_True', 'IsSensitive_False', 'IsSensitive_True', 
+
+'IsFabricated_False', 'IsFabricated_True', 'IsRetired_False', 'IsRetired_True', 'IsSpamList_False', 'IsSpamList_True', 'IsMalware_False', 'Category']] 
+
+y = df['DataClasses'] 
+
+ 
+
+print(X.head(10)) 
+
+print(y.head(10)) 
+
+ 
+
+OUTPUT 
+
+[Running] python -u "/Users/Beno/Desktop/PRT564 PY FILES/python files/splitSVM.py" 
+
+PwnCount ReportedDays ... IsMalware_False Category 
+
+0 14936670 296 ... 1 10.0 
+
+1 8661578 238 ... 1 10.0 
+
+2 6414191 1742 ... 1 10.0 
+
+3 4009640 80 ... 1 10.0 
+
+4 7485802 2313 ... 1 1.0 
+
+5 17706 18 ... 1 6.0 
+
+6 14867999 322 ... 1 10.0 
+
+7 9121434 2460 ... 1 1.0 
+
+8 15025407 438 ... 1 9.0 
+
+9 17979961 234 ... 1 2.0 
+
+ 
+ 
+
+[10 rows x 16 columns] 
+
+0 ['Email addresses', 'IP addresses', 'Names', '... 
+
+1 ['Email addresses', 'IP addresses', 'Names', '... 
+
+2 ['Email addresses', 'Passwords'] 
+
+3 ['Device information', 'Email addresses', 'IP ... 
+
+4 ['Email addresses', 'Passwords', 'Usernames'] 
+
+5 ['Email addresses', 'Passwords', 'Usernames'] 
+
+6 ['Dates of birth', 'Email addresses', 'Genders... 
+
+7 ['Email addresses', 'Passwords', 'Usernames'] 
+
+8 ['Email addresses', 'Genders', 'Geographic loc... 
+
+9 ['Email addresses', 'Passwords'] 
+
+Name: DataClasses, dtype: object 
+
+ 
+ 
+
+[Done] exited with code=0 in 1.102 seconds 
+
+------------------------------------------------------------------------------------- 
+
+CLASSIFER SVM 
+
+import pandas as pd 
+
+from sklearn.model_selection import train_test_split 
+
+from sklearn.feature_extraction.text import TfidfVectorizer 
+
+from sklearn.svm import SVC 
+
+from sklearn.metrics import classification_report, confusion_matrix 
+
+ 
+ 
+
+# Load the dataset 
+
+df = pd.read_csv('dbfinal.csv') 
+
+ 
+ 
+
+# Drop the 'Description' column 
+
+df = df.drop(columns=['Description']) 
+
+ 
+ 
+
+# Split the dataset into training and testing sets 
+
+X_train, X_test, y_train, y_test = train_test_split(df.drop('IsSensitive_True', axis=1), 
+
+df['IsSensitive_True'], test_size=0.20, 
+
+random_state=101) 
+
+ 
+ 
+
+# Preprocess the data using TF-IDF vectorization 
+
+tfidf_vect = TfidfVectorizer( 
+
+analyzer='word', token_pattern=r'\w{1,}', max_features=5000) 
+
+tfidf_vect.fit(df['DataClasses']) 
+
+X_train_tfidf = tfidf_vect.transform(X_train['DataClasses']) 
+
+X_test_tfidf = tfidf_vect.transform(X_test['DataClasses']) 
+
+ 
+ 
+
+# Train an SVM model 
+
+svm_model = SVC(kernel='linear') 
+
+svm_model.fit(X_train_tfidf, y_train) 
+
+ 
+ 
+
+# Predict on the test set and print the classification report and confusion matrix 
+
+y_pred = svm_model.predict(X_test_tfidf) 
+
+print(classification_report(y_test, y_pred)) 
+
+print(confusion_matrix(y_test, y_pred)) 
+
+ 
+
+ 
+
+OUTPUT : 
+[Running] python -u "/Users/Beno/Desktop/PRT564 PY FILES/python files/classiferSVM.py" 
+
+precision recall f1-score support 
+
+ 
+ 
+
+0 0.92 1.00 0.96 114 
+
+1 1.00 0.09 0.17 11 
+
+ 
+ 
+
+accuracy 0.92 125 
+
+macro avg 0.96 0.55 0.56 125 
+
+weighted avg 0.93 0.92 0.89 125 
+
+ 
+ 
+
+[[114 0] 
+
+[ 10 1]] 
+
+ 
+ 
+
+[Done] exited with code=0 in 1.561 seconds 
+
+------------------------------------------------------------------------------------ 
+
+ 
+
+Cross Validation using bayesian Optimzation 
+ 
+“In the example I provided, we specified a parameter grid with 18 different hyperparameter combinations and performed 5-fold cross-validation. This means that the SVM model will be trained and evaluated 90 times (18 combinations x 5 folds) on the training set.” This took several minutes with my MAC M1 chip so expect a long output time!! 
+
+from sklearn.model_selection import cross_val_score 
+
+from sklearn.svm import SVC 
+
+from bayes_opt import BayesianOptimization 
+
+from bayes_opt.util import UtilityFunction 
+
+import numpy as np 
+
+import pandas as pd 
+
+ 
+ 
+
+# Load the data into a pandas DataFrame 
+
+df = pd.read_csv('dbfinal2.csv') 
+
+ 
+ 
+
+# Separate the features and target variable 
+
+X = df.drop('Category', axis=1) 
+
+y = df['Category'] 
+
+ 
+ 
+
+# Define the SVM model with the default hyperparameters 
+
+svm = SVC(kernel='rbf', class_weight='balanced') 
+
+ 
+ 
+
+# Define the objective function for hyperparameter optimization 
+
+ 
+ 
+ 
+
+def objective_function(C, gamma, degree, coef0): 
+
+svm.set_params(C=C, gamma=gamma, degree=degree, coef0=coef0) 
+
+return -np.mean(cross_val_score(svm, X, y, cv=5, n_jobs=-1, scoring='accuracy')) 
+
+ 
+ 
+ 
+
+# Define the search space for hyperparameters 
+
+search_space = {'C': (0.001, 100.0), 
+
+'gamma': (0.0001, 10.0), 
+
+'degree': (1, 5), 
+
+'coef0': (1, 5)} 
+
+ 
+ 
+
+# Define the utility function for acquisition 
+
+utility = UtilityFunction(kind="ucb", kappa=2.576, xi=0.0) 
+
+ 
+ 
+
+# Perform Bayesian optimization 
+
+bayes_optimizer = BayesianOptimization( 
+
+f=objective_function, pbounds=search_space, random_state=0) 
+
+for i in range(50): 
+
+next_point = bayes_optimizer.suggest(utility) 
+
+target = objective_function(**next_point) 
+
+bayes_optimizer.register(params=next_point, target=target) 
+
+ 
+ 
+
+# Print the best hyperparameters found 
+
+print(f"Best accuracy: {-bayes_optimizer.max['target']:.4f}") 
+
+print(f"Best parameters: {bayes_optimizer.max['params']}") 
+
+ 
+
+OUTPUT 
+
+[Running] python -u "/Users/Beno/Desktop/PRT564 PY FILES/python files/GRIDSEARCH.py" 
+
+Best accuracy: 0.1168 
+
+Best parameters: {'C': 0.001, 'coef0': 4.383112388948177, 'degree': 5.0, 'gamma': 10.0} 
+
+ 
+ 
+
+[Done] exited with code=0 in 11.941 seconds 
+
+ 
+
+FINAL TRAINING SET 
+
+# Import necessary libraries 
+
+import pandas as pd 
+
+from sklearn.model_selection import train_test_split 
+
+from sklearn.svm import SVC 
+
+from sklearn.metrics import accuracy_score 
+
+ 
+ 
+
+# Load the data into a pandas dataframe 
+
+df = pd.read_csv('dbfinal2.csv') 
+
+ 
+ 
+
+# Split the data into training and test sets 
+
+X_train, X_test, y_train, y_test = train_test_split(df.drop('Category', axis=1), df['Category'], test_size=0.2, random_state=42) 
+
+ 
+ 
+
+# Initialize an SVM model with the best hyperparameters found by Bayesian optimization 
+
+svm_model = SVC(C=0.001, coef0=4.383112388948177,degree=5.0, gamma=10.0, kernel='poly') 
+
+ 
+ 
+
+# Train the model on the entire training set 
+
+svm_model.fit(X_train, y_train) 
+
+ 
+ 
+
+# Evaluate the model on the held-out test set 
+
+y_pred = svm_model.predict(X_test) 
+
+accuracy = accuracy_score(y_test, y_pred) 
+
+print("Accuracy on test set: {:.4f}".format(accuracy)) 
+
+OUTPUT 
+
+[Running] python -u "/Users/Beno/Desktop/PRT564 PY FILES/python files/finaltrain.py" 
+
+Accuracy on test set: 0.3360 
+
+ 
+ 
+
+[Done] exited with code=0 in 1.557 seconds 
+
+ 
+
+PREDICTION SVM 
+
+ 
+
+import pandas as pd 
+
+from sklearn.model_selection import train_test_split 
+
+from sklearn.preprocessing import StandardScaler 
+
+from sklearn.svm import SVC 
+
+from skopt import BayesSearchCV 
+
+from skopt.space import Real, Categorical, Integer 
+
+ 
+ 
+
+# Load the data 
+
+data = pd.read_csv('dbfinal2.csv') 
+
+ 
+ 
+
+# Separate the features and target 
+
+X = data.drop('Category', axis=1) 
+
+y = data['Category'] 
+
+ 
+ 
+
+# Split the data into training and testing sets 
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) 
+
+ 
+ 
+
+# Scale the data 
+
+scaler = StandardScaler() 
+
+X_train = scaler.fit_transform(X_train) 
+
+X_test = scaler.transform(X_test) 
+
+ 
+ 
+
+# Define the SVM model 
+
+svc = SVC() 
+
+ 
+ 
+
+# Define the search space for hyperparameters 
+
+param_space = { 
+
+'C': Real(1e-6, 1e+6, prior='log-uniform'), 
+
+'gamma': Real(1e-6, 1e+1, prior='log-uniform'), 
+
+'kernel': Categorical(['linear', 'rbf']), 
+
+'degree': Integer(1, 8), 
+
+'coef0': Real(-1, 1) 
+
+} 
+
+ 
+ 
+
+# Define the Bayesian Optimization object 
+
+opt = BayesSearchCV(svc, param_space, n_iter=30, cv=5, n_jobs=-1, verbose=1) 
+
+ 
+ 
+
+# Fit the model on training data using Bayesian Optimization 
+
+opt.fit(X_train, y_train) 
+
+ 
+ 
+
+# Print the best hyperparameters 
+
+print(f'Best hyperparameters: {opt.best_params_}') 
+
+ 
+ 
+
+# Use the best hyperparameters to make predictions on the test set 
+
+y_pred = opt.predict(X_test) 
+
+ 
+ 
+
+# Print the classification report 
+
+print(classification_report(y_test, y_pred)) 
+
+ 
