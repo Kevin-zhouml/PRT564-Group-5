@@ -1,0 +1,53 @@
+random forrest:
+
+[Saturday 7:38 pm] Ben Carruth
+
+
+
+
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+
+from sklearn.ensemble import RandomForestClassifier
+
+ 
+
+# Load dataset
+
+data = pd.read_csv('dbfinal.csv')
+
+ 
+
+# Split data into training and test sets
+
+X_train, X_test, y_train, y_test = train_test_split(data.drop('Category', axis=1), data['Category'], test_size=0.2, random_state=42)
+
+ 
+
+# Create Random Forest model
+
+rf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+
+ 
+
+# Fit the model on the training data
+
+rf.fit(X_train, y_train)
+
+ 
+
+# Predict the labels for the test data
+
+y_pred = rf.predict(X_test)
+
+ 
+
+# Evaluate the model performance
+
+score = rf.score(X_test, y_test)
+
+print(f"Accuracy: {score}")
+
+
+
